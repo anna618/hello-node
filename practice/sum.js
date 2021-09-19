@@ -2,8 +2,8 @@ console.log("hello world!");
 
 function sum(param) {
   // TODO: 請從 1 + 2 + 3 + .... + param
-  var i; // 紀錄目前要處理的數字
-  var sum = 0; // 紀錄到目前為止的總和
+  let i;
+  let sum = 0;
   for (i = 1; i <= param; i++) {
     sum = sum + i;
   }
