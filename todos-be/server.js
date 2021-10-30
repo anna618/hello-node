@@ -1,6 +1,5 @@
 const express = require("express");
 const path = require("path");
-let app = express(); // application
 require("dotenv").config();
 const mysql = require("mysql");
 const Promise = require("bluebird");
@@ -16,11 +15,21 @@ let connection = mysql.createConnection({
 // 利用 bluebird 把 connection 的函式都變成 promise
 connection = Promise.promisifyAll(connection);
 
+let app = express(); // application
+
+// cors
+const cors = require("cors");
+// let corsOptions = {
+//   origin: "*", //all
+// };
+app.use(cors());
+
 app.use(express.static("static"));
 //localhost:3001/about.html
 
 // app.use(PATH, express.static(檔案夾))
 // express.static(檔案夾名稱) 是內建的中間件
+// 自動幫你做成路由
 http: app.use("/static", express.static("static"));
 // http://localhost:3001/static/about.html
 
@@ -78,18 +87,38 @@ app.get("/member", (req, res) => {
   res.send("我是會員頁");
 });
 
+// [列表]：全部資料
+// 一個路由要給他路徑，連結資料庫抓資料
+app.get("/api/todos", async (req, res) => {
+  let data = await connection.queryAsync("SELECT * FROM todos");
+  res.json(data);
+});
+
+// /api/todos/24
+// 根據 id 取得單筆資料
+app.get("/api/todos/:todoId", async (req, res) => {
+  // req.params.todoID
+  let data = await connection.queryAsync("SELECT * FROM todos WHERE id = ?;", [
+    req.params.todoId,
+  ]);
+  // A 直接把陣列回給前端
+  // res.json(data);
+  if (data.length > 0) {
+    // B 只回覆一個物件
+    res.json(data[0]);
+  } else {
+    // /api/todos/44 -> 空的情況
+    // res.send(null);
+    res.status(404).send("Not Found");
+  }
+});
+
 // 職責切割
 
 // 這個中間件是負責做紀錄
 app.use((req, res, next) => {
   console.log(`${req.url} 找不到路由`);
   next();
-});
-
-//抓資料
-app.get("/api/todos", async (req, res) => {
-  let data = await connection.queryAsync("SELECT * FROM todos");
-  res.json(data);
 });
 
 // 既然會走到所有路由後面的這個中間件
